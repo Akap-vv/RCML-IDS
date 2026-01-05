@@ -54,13 +54,7 @@ def train(config, model, train_iter, dev_iter, test_iter, start_train_time):
             model.zero_grad()
             if config.imploss:
                 # improved loss function
-                if len(outputs)==4:
-                    loss1 = F.cross_entropy(outputs[0], labels)
-                    loss2 = F.cross_entropy(outputs[1], labels)
-                    loss3 = F.cross_entropy(outputs[2], labels)
-                    loss4 = F.cross_entropy(outputs[3], labels)
-                    loss = loss1 + loss2 + loss3 + loss4
-                elif len(outputs)==3:
+                if len(outputs)==3:
                     loss1 = F.cross_entropy(outputs[0], labels)
                     loss2 = F.cross_entropy(outputs[1], labels)
                     loss3 = F.cross_entropy(outputs[2], labels)
@@ -88,12 +82,7 @@ def train(config, model, train_iter, dev_iter, test_iter, start_train_time):
                     improve = ''
                 time_dif = get_time_dif(start_time)
                 if config.imploss:
-                    if len(outputs) == 4:
-                        msg= 'Iter: {0:>6},  Train Acc: {1:>6.2%},  Val Loss: {2:.4f},  Val Acc: {3:>6.2%},  Time: {4} {5} \n' \
-                             'final_Loss: {6:.4f}, raw_loss:{7:.4f}, length_loss:{8:.4f}, time_Loss: {9:.4f}, sum_Loss: {10:.4f} \n'
-                        print(msg.format(total_batch, train_acc, dev_loss, dev_acc, time_dif, improve,
-                                         loss1.item(), loss2.item(), loss3.item(), loss4.item(), loss.item()))
-                    elif len(outputs) == 3:
+                    if len(outputs) == 3:
                         msg = 'Iter: {0:>6},  Train Acc: {1:>6.2%},  Val Loss: {2:.4f},  Val Acc: {3:>6.2%},  Time: {4} {5} \n' \
                               'final_Loss: {6:.4f}, raw_loss:{7:.4f}, length_loss:{8:.4f}, sum_Loss: {9:.4f} \n'
                         print(msg.format(total_batch, train_acc, dev_loss, dev_acc, time_dif, improve,
@@ -131,7 +120,7 @@ def test(config, model, test_iter,temp_save_path=None,loss_path=None):
     model.eval()
     test_acc, test_loss, f1, test_confusion = evaluate(config, model, test_iter, result_path = loss_path,test=True)
     fpr, tpr, ftf = OtherMetrics(test_confusion)
-        return test_acc, test_loss, f1, fpr, tpr, ftf
+    return test_acc, test_loss, f1, fpr, tpr, ftf
 
 def evaluate(config, model, data_iter, result_path = None, test=False):
     model.eval()

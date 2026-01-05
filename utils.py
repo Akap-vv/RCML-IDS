@@ -12,15 +12,11 @@ UNK, PAD, CLS, SEP = '[UNK]', '[PAD]', '[PKT]', '[SEP]'
 
 def build_dataset(config):
     def load_dataset(path, pad_num=10, pad_length=100, pad_len_seq=10):
-        dataset = config.dataset.split('-')[-1]
-        tn = config.dataset.split('-')[0]+'-'+config.dataset.split('-')[1]
-        cache_dir = './DataCache/{}/{}/'.format(dataset,tn)
-        cached_dataset_file = cache_dir + '{}_{}_{}_{}_{}_no_http.txt'.format(config.dataset,pad_num, pad_length, pad_len_seq,config.mode)
+        cached_dataset_file = './DataCache/{}_{}_{}_{}_{}.txt'.format(config.dataset,pad_num, pad_length, pad_len_seq,config.mode)
         if os.path.exists(cached_dataset_file):
             print("Loading features from cached file {}".format(cached_dataset_file))
             with open(cached_dataset_file, "rb") as handle:
                 contents = pickle.load(handle)
-
             return contents
         else:
             print("Creating ",config.mode," dataset....")
@@ -30,16 +26,14 @@ def build_dataset(config):
                     if not line or line=='\n':
                         continue
                     item = line.split('\t')
-                    flow = item[0:-3]  # packets
+                    flow = item[0:-2]  # packets
                     if len(flow) > pad_num:
                         flow = flow[0: pad_num]
-                    length_seq = item[-3].strip().split(' ')
+                    length_seq = item[-2].strip().split(' ')
                     length_seq = list(map(int, length_seq))
                     length_seq = [1500 if x > 1500 else x for x in length_seq]
-                    time_seq = item[-2].strip().split(' ')
-                    time_seq = list(map(float, time_seq))
-
                     label = int(item[-1].rstrip())
+
                     traffic_bytes_idss = []
                     for packet in flow:
                         traffic_bytes = config.tokenizer.tokenize(packet)
@@ -60,10 +54,8 @@ def build_dataset(config):
                     if pad_len_seq:
                         if len(length_seq) < pad_len_seq:
                             length_seq += [0] * (pad_len_seq - len(length_seq))
-                            time_seq += [0] * (pad_len_seq - len(time_seq))
                         else:
                             length_seq = length_seq[:pad_len_seq]
-                            time_seq = time_seq[:pad_len_seq]
 
                     if pad_num:
                         if len(traffic_bytes_idss) < pad_num:
@@ -74,10 +66,8 @@ def build_dataset(config):
                         else:
                             traffic_bytes_idss = traffic_bytes_idss[:pad_num]
 
-                    contents.append((traffic_bytes_idss, length_seq,time_seq, label))
+                    contents.append((traffic_bytes_idss, length_seq, label))
             print("Saving dataset cached file {}".format(cached_dataset_file))
-            if not os.path.exists(cache_dir):
-                os.makedirs(cache_dir)
             with open(cached_dataset_file, "wb") as handle:
                 pickle.dump(contents, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -91,7 +81,7 @@ def build_dataset(config):
     return train
 
 class DatasetIterater(object):
-    def __init__(self, batches, batch_size, device, pad_num, pad_length, pad_len_seq,tfidf):
+    def __init__(self, batches, batch_size, device, pad_num, pad_length, pad_len_seq):
         self.batch_size = batch_size
         self.batches = batches
         self.n_batches = len(batches) // batch_size
@@ -103,7 +93,6 @@ class DatasetIterater(object):
         self.pad_num = pad_num
         self.pad_length = pad_length
         self.pad_len_seq = pad_len_seq
-        self.tfidf = tfidf
 
     def _to_tensor(self, datas):
         # datas: batch_size * contents
@@ -142,7 +131,7 @@ class DatasetIterater(object):
 
 
 def build_iterator(dataset, config):
-    iter = DatasetIterater(dataset, config.batch_size, config.device, config.pad_num, config.pad_length, config.pad_len_seq,config.tfidf)
+    iter = DatasetIterater(dataset, config.batch_size, config.device, config.pad_num, config.pad_length, config.pad_len_seq)
     return iter
 
 
